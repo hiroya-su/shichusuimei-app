@@ -2,11 +2,10 @@ from flask import Flask, request, render_template_string
 from meishiki import Meishiki
 import logging
 
-app = Flask(__name__)
-logging.basicConfig(level=logging.INFO)
+KAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]
+SHI = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
 
-KAN = "甲乙丙丁戊己庚辛壬癸"
-SHI = "子丑寅卯辰巳午未申酉戌亥"
+logging.basicConfig(level=logging.INFO)
 
 HTML = '''
 <!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>四柱推命</title></head><body>
@@ -24,10 +23,12 @@ HTML = '''
 </body></html>
 '''
 
-def kanshi_str(lst):
-    if isinstance(lst, list) and len(lst) >= 2:
-        kan = KAN[lst[0]] if 0 <= lst[0] < len(KAN) else "不明"
-        shi = SHI[lst[1]] if 0 <= lst[1] < len(SHI) else "不明"
+app = Flask(__name__)
+
+def kanshi_str(pair):
+    if isinstance(pair, list) and len(pair) >= 2:
+        kan = KAN[pair[0]] if 0 <= pair[0] < len(KAN) else "不明"
+        shi = SHI[pair[1]] if 0 <= pair[1] < len(SHI) else "不明"
         return f"{kan}{shi}"
     return "不明"
 
@@ -35,36 +36,37 @@ def kanshi_str(lst):
 def index():
     result = None
     error = None
-
     if request.method == "POST":
-        try:
-            name = request.form.get("name", "").strip()
-            y = int(request.form.get("year", ""))
-            m = int(request.form.get("month", ""))
-            d = int(request.form.get("day", ""))
-            h = int(request.form.get("hour", ""))
+        name = request.form.get("name", "").strip()
+        year = request.form.get("year", "").strip()
+        month = request.form.get("month", "").strip()
+        day = request.form.get("day", "").strip()
+        hour = request.form.get("hour", "").strip()
 
-            m_obj = Meishiki(y, m, d, h)
+        if not all([name, year, month, day, hour]):
+            error = "全ての項目を入力してください"
+        else:
+            try:
+                y, m, d, h = map(int, (year, month, day, hour))
+                m_obj = Meishiki(y, m, d, h)
+                app.logger.info("属性確認: %s", dir(m_obj))
 
-            nenchu = kanshi_str(getattr(m_obj, "nenchu", []))
-            getchu = kanshi_str(getattr(m_obj, "getchu", []))
-            nitchu = kanshi_str(getattr(m_obj, "nitchu", []))
-            jichu  = kanshi_str(getattr(m_obj, "jichu", []))
-            nikkan = getattr(m_obj, "nikkan", "不明")
-            sex    = getattr(m_obj, "sex", "不明")
+                nenchu = kanshi_str(m_obj.nenchu)
+                getchu = kanshi_str(m_obj.getchu)
+                nitchu = kanshi_str(m_obj.nitchu)
+                jichu  = kanshi_str(m_obj.jichu)
 
-            result = f"""🌸 名前: {name}
+                result = f"""🌸 名前: {name}
 📅 年柱: {nenchu}
 📅 月柱: {getchu}
 📅 日柱: {nitchu}
 📅 時柱: {jichu}
-🔢 十干番号(日): {nikkan}
-🧬 性別コード: {sex}
+🔢 十干番号(日): {m_obj.nikkan}
+🧬 性別コード: {m_obj.sex}
 """
 
-        except Exception as e:
-            logging.exception("内部エラー:")
-            error = f"内部エラー: {e}"
+            except Exception as e:
+                error = f"内部エラー: {e}"
 
     return render_template_string(HTML, result=result, error=error)
 
