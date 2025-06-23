@@ -1,40 +1,23 @@
 from flask import Flask, request, render_template_string
 from meishiki import Meishiki
-import logging
 
-logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
 
 HTML = '''
 <!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>四柱推命</title></head><body>
-  <h1>🔮 四柱推命 診断</h1>
-  <form method="post">
-    名前: <input type="text" name="name"><br>
-    年: <input type="number" name="year"><br>
-    月: <input type="number" name="month"><br>
-    日: <input type="number" name="day"><br>
-    時: <input type="number" name="hour"><br>
-    <button type="submit">診断</button>
-  </form>
-  {% if error %}<p style="color:red">⚠️ {{ error }}</p>{% endif %}
-  {% if result %}<h2>📝 結果</h2><pre>{{ result }}</pre>{% endif %}
+<h1>🔮 四柱推命 診断フォーム</h1>
+<form method="post">
+名前: <input name="name"><br>
+年: <input name="year" type="number"><br>
+月: <input name="month" type="number"><br>
+日: <input name="day" type="number"><br>
+時: <input name="hour" type="number"><br>
+<button type="submit">診断</button>
+</form>
+{% if result %}<h2>結果</h2><pre>{{ result }}</pre>{% endif %}
+{% if error %}<p style="color:red">{{ error }}</p>{% endif %}
 </body></html>
 '''
-
-def resolve_kanshi(obj):
-    # 文字列ならそのまま返す
-    if isinstance(obj, str):
-        return obj
-    # リストまたはタプルなら最初の2要素を結合
-    if isinstance(obj, (list, tuple)) and len(obj) >= 2:
-        return f"{obj[0]}{obj[1]}"
-    # Kanshi オブジェクトなら str で返す
-    if hasattr(obj, '__str__'):
-        try:
-            return str(obj)
-        except:
-            return "不明"
-    return "不明"
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -42,25 +25,29 @@ def index():
     error = None
     if request.method == "POST":
         try:
-            name = request.form.get("name", "").strip()
-            year = int(request.form.get("year", 0))
-            month = int(request.form.get("month", 0))
-            day = int(request.form.get("day", 0))
-            hour = int(request.form.get("hour", 0))
+            name = request.form["name"]
+            year = int(request.form["year"])
+            month = int(request.form["month"])
+            day = int(request.form["day"])
+            hour = int(request.form["hour"])
 
             m = Meishiki(year, month, day, hour)
-            app.logger.info("属性確認: %s", dir(m))
 
-            result = f'''🌸 名前: {name}
-📅 年柱: {resolve_kanshi(m.nenchu)}
-📅 月柱: {resolve_kanshi(m.getchu)}
-📅 日柱: {resolve_kanshi(m.nitchu)}
-📅 時柱: {resolve_kanshi(m.jichu)}
+            # 各干支を正しく取得
+            nenchu = str(m.nenchu.kanshi()) if hasattr(m.nenchu, "kanshi") else "不明"
+            getchu = str(m.getchu.kanshi()) if hasattr(m.getchu, "kanshi") else "不明"
+            nitchu = str(m.nitchu.kanshi()) if hasattr(m.nitchu, "kanshi") else "不明"
+            jichu = str(m.jichu.kanshi()) if hasattr(m.jichu, "kanshi") else "不明"
+
+            result = f"""🌸 名前: {name}
+📅 年柱: {nenchu}
+📅 月柱: {getchu}
+📅 日柱: {nitchu}
+📅 時柱: {jichu}
 🔢 十干番号(日): {m.nikkan}
-🧬 性別コード: {m.sex}'''
-
+🧬 性別コード: {m.sex}"""
         except Exception as e:
-            error = f"内部エラー: {e}"
+            error = f"⚠️ エラー: {e}"
 
     return render_template_string(HTML, result=result, error=error)
 
