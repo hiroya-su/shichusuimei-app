@@ -5,12 +5,17 @@ import logging
 KAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]
 SHI = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
 
-# ログ設定
 logging.basicConfig(level=logging.INFO)
 
 HTML = '''
-<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>四柱推命</title></head><body>
-  <h1>🔮 四柱推命テスト</h1>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>四柱推命診断</title>
+</head>
+<body style="font-family:sans-serif;padding:20px;">
+  <h1>🔮 四柱推命フォーム</h1>
   <form method="post">
     名前: <input type="text" name="name"><br>
     年: <input type="number" name="year"><br>
@@ -19,14 +24,17 @@ HTML = '''
     時: <input type="number" name="hour"><br>
     <button type="submit">診断実行</button>
   </form>
-  {% if error %}<p style="color:red">⚠️ {{ error }}</p>{% endif %}
+  {% if error %}
+    <p style="color:red;">⚠️ {{ error }}</p>
+  {% endif %}
   {% if result %}
-    <h2>📝 結果</h2>
-    <div style="background:#f9f9f9;border:1px solid #ccc;padding:10px">
+    <h2>📝 診断結果</h2>
+    <div style="background:#f0f0f0;padding:15px;border-radius:8px;">
       {{ result | safe }}
     </div>
   {% endif %}
-</body></html>
+</body>
+</html>
 '''
 
 app = Flask(__name__)
@@ -46,18 +54,24 @@ def index():
             if not all([name, year, month, day, hour]):
                 error = "全ての項目を入力してください"
             else:
-                m_obj = Meishiki(year, month, day, hour)
-                app.logger.info("Meishiki生成 OK: %s", dir(m_obj))
+                m = Meishiki(year, month, day, hour)
 
-                nikkan = KAN[m_obj.nikkan % 10]
-                chishi = SHI[m_obj.chishi % 12]
+                # 干支取得（indexが範囲外にならないよう % 使用）
+                def eto(tenkan, chishi):
+                    return f"{KAN[tenkan % 10]}{SHI[chishi % 12]}"
 
                 result = f"""
                 🌸 <strong>名前:</strong> {name}<br>
-                🌞 <strong>日干支:</strong> {nikkan}{chishi}<br>
-                🔢 <strong>十干番号:</strong> {m_obj.nikkan}<br>
-                🧬 <strong>性別コード:</strong> {m_obj.sex}
+                <hr>
+                📅 <strong>年柱:</strong> {eto(m.nenchu[0], m.nenchu[1])}<br>
+                📅 <strong>月柱:</strong> {eto(m.getchu[0], m.getchu[1])}<br>
+                📅 <strong>日柱:</strong> {eto(m.nikkan, m.chishi)}<br>
+                📅 <strong>時柱:</strong> {eto(m.jichu[0], m.jichu[1]) if m.jichu else "不明"}<br>
+                <hr>
+                🔢 <strong>十干番号(日):</strong> {m.nikkan}<br>
+                🧬 <strong>性別コード:</strong> {m.sex}
                 """
+
         except Exception as e:
             app.logger.error("内部エラー: %s", e)
             error = f"内部エラー: {e}"
