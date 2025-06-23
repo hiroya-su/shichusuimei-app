@@ -39,17 +39,20 @@ def index():
 
             m_obj = Meishiki(y, m, d, h)
 
-            def get_kanshi(column):
-                if len(column) >= 2 and column[0] is not None and column[1] is not None:
-                    kan = KAN[column[0]] if 0 <= column[0] < 10 else "不明"
-                    shi = SHI[column[1]] if 0 <= column[1] < 12 else "不明"
+            # ログにすべての中身を出力
+            app.logger.info("Meishiki全体: %s", m_obj.__dict__)
+
+            def get_kanshi(lst):
+                if isinstance(lst, list) and len(lst) >= 2:
+                    kan = KAN[lst[0]] if 0 <= lst[0] < len(KAN) else "不明"
+                    shi = SHI[lst[1]] if 0 <= lst[1] < len(SHI) else "不明"
                     return f"{kan}{shi}"
                 return "不明"
 
-            nenchu = get_kanshi(m_obj.nenchu)
-            getchu = get_kanshi(m_obj.getchu)
-            nitchu = get_kanshi(m_obj.nitchu)
-            jikkan = get_kanshi(m_obj.jichu)
+            nenchu = get_kanshi(getattr(m_obj, "nenchu", []))
+            getchu = get_kanshi(getattr(m_obj, "getchu", []))
+            nitchu = get_kanshi(getattr(m_obj, "nitchu", []))
+            jikkan = get_kanshi(getattr(m_obj, "jichu", []))
 
             result = f"""🌸 名前: {name}
 📅 年柱: {nenchu}
@@ -59,13 +62,11 @@ def index():
 🔢 十干番号(日): {m_obj.nikkan}
 🧬 性別コード: {m_obj.sex}
 """
-
         except Exception as e:
             app.logger.error("内部エラー: %s", e)
             error = f"内部エラー: {e}"
 
     return render_template_string(HTML, result=result, error=error)
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
