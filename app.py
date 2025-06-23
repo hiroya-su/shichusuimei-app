@@ -1,50 +1,56 @@
-import logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s: %(message)s'
-)
-
 from flask import Flask, request, render_template_string
 from meishiki import Meishiki
+import logging
+
+# ——————————————————————————
+# ログの初期設定（app.logger を INFO レベルで有効に）
+logging.basicConfig(level=logging.INFO)
+
+# HTML テンプレート（ファイル上部）
+HTML = '''
+<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>四柱推命</title></head><body>
+  <h1>🔮 四柱推命テスト</h1>
+  <form method="post">
+    名前: <input type="text" name="name"><br>
+    年: <input type="number" name="year"><br>
+    月: <input type="number" name="month"><br>
+    日: <input type="number" name="day"><br>
+    時: <input type="number" name="hour"><br>
+    <button type="submit">診断実行</button>
+  </form>
+  {% if error %}<p style="color:red">⚠️ {{ error }}</p>{% endif %}
+  {% if result %}<h2>📝 結果</h2><pre>{{ result|tojson(indent=2, ensure_ascii=False) }}</pre>{% endif %}
+</body></html>
+'''
+
 app = Flask(__name__)
-
-
-# HTML は省略（そのままでOK）
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     result = None
     error = None
-
     if request.method == "POST":
-        name_s   = request.form.get("name", "").strip()
-        year_s   = request.form.get("year", "").strip()
-        month_s  = request.form.get("month", "").strip()
-        day_s    = request.form.get("day", "").strip()
-        hour_s   = request.form.get("hour", "").strip()
+        name = request.form.get("name", "").strip()
+        year = request.form.get("year", "").strip()
+        month = request.form.get("month", "").strip()
+        day = request.form.get("day", "").strip()
+        hour = request.form.get("hour", "").strip()
 
-        if not (name_s and year_s and month_s and day_s and hour_s):
+        if not all([name, year, month, day, hour]):
             error = "全ての項目を入力してください"
         else:
             try:
-                year  = int(year_s)
-                month = int(month_s)
-                day   = int(day_s)
-                hour  = int(hour_s)
-
-                m = Meishiki(year, month, day, hour)
-                logging.info("Meishiki dir: %s", dir(m))
-
-                if hasattr(m, "to_dict"):
-                    result = m.to_dict()
-                elif hasattr(m, "to_json"):
-                    result = m.to_json()
+                y, m, d, h = map(int, (year, month, day, hour))
+                m_obj = Meishiki(y, m, d, h)
+                app.logger.info("Meishiki生成 OK: %s", dir(m_obj))
+                if hasattr(m_obj, "to_dict"):
+                    result = m_obj.to_dict()
+                elif hasattr(m_obj, "to_json"):
+                    result = m_obj.to_json()
                 else:
                     error = "to_dict/to_json メソッドがありません"
-            except ValueError:
-                error = "年/月/日/時 には数字を入力してください"
             except Exception as e:
-                error = f"実行時エラー: {e}"
+                error = f"内部エラー: {e}"
 
     return render_template_string(HTML, result=result, error=error)
 
