@@ -1,10 +1,13 @@
 import logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s: %(message)s'
+)
 
 from flask import Flask, request, render_template_string
 from meishiki import Meishiki
-
 app = Flask(__name__)
+
 
 # HTML は省略（そのままでOK）
 
