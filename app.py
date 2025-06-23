@@ -1,11 +1,12 @@
+import logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')
+
 from flask import Flask, request, render_template_string
 from meishiki import Meishiki
-import logging
 
 app = Flask(__name__)
-logging.basicConfig(level=logging.INFO)
 
-HTML = '''（省略：テンプレートはそのままOK）'''
+# HTML は省略（そのままでOK）
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -13,14 +14,12 @@ def index():
     error = None
 
     if request.method == "POST":
-        # 入力取得
         name_s   = request.form.get("name", "").strip()
         year_s   = request.form.get("year", "").strip()
         month_s  = request.form.get("month", "").strip()
         day_s    = request.form.get("day", "").strip()
         hour_s   = request.form.get("hour", "").strip()
 
-        # バリデーション
         if not (name_s and year_s and month_s and day_s and hour_s):
             error = "全ての項目を入力してください"
         else:
