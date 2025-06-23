@@ -1,5 +1,5 @@
 from flask import Flask, request, render_template_string
-from meishiki.meishiki import Meishiki
+from meishiki import Meishiki
 
 app = Flask(__name__)
 
