@@ -1,5 +1,6 @@
 from flask import Flask, request, render_template_string
 from meishiki import Meishiki
+import dataclasses  # ←★追加
 import logging
 
 # ——————————————————————————
@@ -43,12 +44,7 @@ def index():
                 y, m, d, h = map(int, (year, month, day, hour))
                 m_obj = Meishiki(y, m, d, h)
                 app.logger.info("Meishiki生成 OK: %s", dir(m_obj))
-                if hasattr(m_obj, "to_dict"):
-                    result = m_obj.to_dict()
-                elif hasattr(m_obj, "to_json"):
-                    result = m_obj.to_json()
-                else:
-                    error = "to_dict/to_json メソッドがありません"
+                result = dataclasses.asdict(m_obj)  # ← 修正済み
             except Exception as e:
                 error = f"内部エラー: {e}"
 
