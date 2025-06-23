@@ -39,8 +39,9 @@ def index():
         day = int(request.form["day"])
         hour = int(request.form["hour"])
         m = Meishiki(year, month, day, hour)
-      　print(dir(m))
+        print(dir(m))  # ← この行も、完全にスペース4つ（あるいは8つ）で揃える
         result = m.show_as_dict()
+
     return render_template_string(HTML, result=result)
 
 if __name__ == "__main__":
