@@ -1,13 +1,15 @@
 from flask import Flask, request, render_template_string
 from meishiki import Meishiki
-import dataclasses  # ←★追加
 import logging
 
-# ——————————————————————————
-# ログの初期設定（app.logger を INFO レベルで有効に）
+# 干支の一覧
+KAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]
+SHI = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
+
+# ログ設定
 logging.basicConfig(level=logging.INFO)
 
-# HTML テンプレート（ファイル上部）
+# HTMLテンプレート
 HTML = '''
 <!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>四柱推命</title></head><body>
   <h1>🔮 四柱推命テスト</h1>
@@ -44,7 +46,16 @@ def index():
                 y, m, d, h = map(int, (year, month, day, hour))
                 m_obj = Meishiki(y, m, d, h)
                 app.logger.info("Meishiki生成 OK: %s", dir(m_obj))
-                result = m_obj.show()  # ←ここを show() に変更
+
+                # 自分で整形する
+                kan = KAN[m_obj.nikkan] if isinstance(m_obj.nikkan, int) else "不明"
+                shi = SHI[m_obj.chishi] if isinstance(m_obj.chishi, int) else "不明"
+                result = f"""🔯 {name} さんの診断結果
+
+日干支: {kan}{shi}
+十干番号: {m_obj.tenkan}
+性別コード: {m_obj.sex}
+"""
             except Exception as e:
                 error = f"内部エラー: {e}"
 
