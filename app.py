@@ -21,13 +21,19 @@ HTML = '''
 </body></html>
 '''
 
-def resolve_kanshi(field):
-    if isinstance(field, (list, tuple)) and len(field) >= 2:
-        return f"{field[0]}{field[1]}"
-    elif hasattr(field, '__getitem__') and len(field) >= 2:
-        return f"{field[0]}{field[1]}"
-    elif hasattr(field, 'kanshi'):
-        return str(field.kanshi)
+def resolve_kanshi(obj):
+    # 文字列ならそのまま返す
+    if isinstance(obj, str):
+        return obj
+    # リストまたはタプルなら最初の2要素を結合
+    if isinstance(obj, (list, tuple)) and len(obj) >= 2:
+        return f"{obj[0]}{obj[1]}"
+    # Kanshi オブジェクトなら str で返す
+    if hasattr(obj, '__str__'):
+        try:
+            return str(obj)
+        except:
+            return "不明"
     return "不明"
 
 @app.route("/", methods=["GET", "POST"])
@@ -45,17 +51,12 @@ def index():
             m = Meishiki(year, month, day, hour)
             app.logger.info("属性確認: %s", dir(m))
 
-            nenchu = resolve_kanshi(m.nenchu)
-            getchu = resolve_kanshi(m.getchu)
-            nitchu = resolve_kanshi(m.nitchu)
-            jikkan = m.nikkan if hasattr(m, 'nikkan') else "不明"
-
             result = f'''🌸 名前: {name}
-📅 年柱: {nenchu}
-📅 月柱: {getchu}
-📅 日柱: {nitchu}
+📅 年柱: {resolve_kanshi(m.nenchu)}
+📅 月柱: {resolve_kanshi(m.getchu)}
+📅 日柱: {resolve_kanshi(m.nitchu)}
 📅 時柱: {resolve_kanshi(m.jichu)}
-🔢 十干番号(日): {jikkan}
+🔢 十干番号(日): {m.nikkan}
 🧬 性別コード: {m.sex}'''
 
         except Exception as e:
