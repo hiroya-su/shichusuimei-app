@@ -1,0 +1,2 @@
+flask
+meishiki @ git+https://github.com/hajime-f/meishiki.git
