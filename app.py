@@ -44,20 +44,33 @@ def index():
                 m_obj = Meishiki(y, m, d, h)
                 app.logger.info("Meishiki生成 OK: %s", dir(m_obj))
 
-                # 安全な干支取得
-                kan = KAN[m_obj.nikkan] if isinstance(m_obj.nikkan, int) and 0 <= m_obj.nikkan < len(KAN) else "不明"
-                shi = SHI[m_obj.chishi] if isinstance(m_obj.chishi, int) and 0 <= m_obj.chishi < len(SHI) else "不明"
+                # 干支の配列
+                KAN = "甲乙丙丁戊己庚辛壬癸"
+                SHI = "子丑寅卯辰巳午未申酉戌亥"
 
-                result = f"""🔯 {name} さんの診断結果
+                # 干支の文字列を取得（インデックス範囲をチェック）
+                try:
+                    nikkan = KAN[m_obj.nikkan] if 0 <= m_obj.nikkan < len(KAN) else "不明"
+                except Exception:
+                    nikkan = "不明"
 
-日干支: {kan}{shi}
-十干番号: {m_obj.tenkan}
-性別コード: {m_obj.sex}
-"""
+                try:
+                    chishi = SHI[m_obj.chishi] if 0 <= m_obj.chishi < len(SHI) else "不明"
+                except Exception:
+                    chishi = "不明"
+
+                result = f"""
+                🌸 名前: {name}
+                🌞 日干支: {nikkan}{chishi}
+                🔢 十干番号: {m_obj.nikkan}
+                🧬 性別コード: {m_obj.sex}
+                """
+
             except Exception as e:
                 error = f"内部エラー: {e}"
 
     return render_template_string(HTML, result=result, error=error)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
