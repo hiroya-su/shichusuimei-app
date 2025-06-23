@@ -25,11 +25,17 @@ HTML = '''
 
 app = Flask(__name__)
 
-def kanshi_str(pair):
-    if isinstance(pair, list) and len(pair) >= 2:
-        kan = KAN[pair[0]] if 0 <= pair[0] < len(KAN) else "不明"
-        shi = SHI[pair[1]] if 0 <= pair[1] < len(SHI) else "不明"
-        return f"{kan}{shi}"
+def resolve_kanshi(value):
+    """干支を番号やオブジェクトから文字列に変換"""
+    try:
+        if isinstance(value, (list, tuple)) and len(value) == 2:
+            return f"{KAN[value[0]]}{SHI[value[1]]}"
+        elif hasattr(value, 'tenkan') and hasattr(value, 'chishi'):
+            return f"{KAN[value.tenkan]}{SHI[value.chishi]}"
+        elif isinstance(value, dict) and "tenkan" in value and "chishi" in value:
+            return f"{KAN[value['tenkan']]}{SHI[value['chishi']]}"
+    except Exception:
+        pass
     return "不明"
 
 @app.route("/", methods=["GET", "POST"])
@@ -37,36 +43,26 @@ def index():
     result = None
     error = None
     if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        year = request.form.get("year", "").strip()
-        month = request.form.get("month", "").strip()
-        day = request.form.get("day", "").strip()
-        hour = request.form.get("hour", "").strip()
+        try:
+            name = request.form.get("name", "").strip()
+            year = int(request.form.get("year", ""))
+            month = int(request.form.get("month", ""))
+            day = int(request.form.get("day", ""))
+            hour = int(request.form.get("hour", ""))
 
-        if not all([name, year, month, day, hour]):
-            error = "全ての項目を入力してください"
-        else:
-            try:
-                y, m, d, h = map(int, (year, month, day, hour))
-                m_obj = Meishiki(y, m, d, h)
-                app.logger.info("属性確認: %s", dir(m_obj))
+            m = Meishiki(year, month, day, hour)
+            app.logger.info("属性確認: %s", dir(m))
 
-                nenchu = kanshi_str(m_obj.nenchu)
-                getchu = kanshi_str(m_obj.getchu)
-                nitchu = kanshi_str(m_obj.nitchu)
-                jichu  = kanshi_str(m_obj.jichu)
-
-                result = f"""🌸 名前: {name}
-📅 年柱: {nenchu}
-📅 月柱: {getchu}
-📅 日柱: {nitchu}
-📅 時柱: {jichu}
-🔢 十干番号(日): {m_obj.nikkan}
-🧬 性別コード: {m_obj.sex}
+            result = f"""🌸 名前: {name}
+📅 年柱: {resolve_kanshi(m.nenchu)}
+📅 月柱: {resolve_kanshi(m.getchu)}
+📅 日柱: {resolve_kanshi(m.nitchu)}
+📅 時柱: {resolve_kanshi(m.jichu)}
+🔢 十干番号(日): {m.nikkan}
+🧬 性別コード: {m.sex}
 """
-
-            except Exception as e:
-                error = f"内部エラー: {e}"
+        except Exception as e:
+            error = f"内部エラー: {e}"
 
     return render_template_string(HTML, result=result, error=error)
 
