@@ -19,14 +19,13 @@ HTML = '''
     <button type="submit">診断実行</button>
   </form>
   {% if error %}<p style="color:red">⚠️ {{ error }}</p>{% endif %}
-  {% if result %}<h2>📝 結果</h2><pre>{{ result }}</pre>{% endif %}
+  {% if result %}<h2>📜 結果</h2><pre>{{ result }}</pre>{% endif %}
 </body></html>
 '''
 
 app = Flask(__name__)
 
 def resolve_kanshi(value):
-    """干支を番号やオブジェクトから文字列に変換"""
     try:
         if isinstance(value, (list, tuple)) and len(value) == 2:
             return f"{KAN[value[0]]}{SHI[value[1]]}"
@@ -53,12 +52,13 @@ def index():
             m = Meishiki(year, month, day, hour)
             app.logger.info("属性確認: %s", dir(m))
 
-            result = f"""🌸 名前: {name}
+            result = f"""\
+🌸 名前: {name}
 📅 年柱: {resolve_kanshi(m.nenchu)}
 📅 月柱: {resolve_kanshi(m.getchu)}
 📅 日柱: {resolve_kanshi(m.nitchu)}
 📅 時柱: {resolve_kanshi(m.jichu)}
-🔢 十干番号(日): {m.nikkan}
+🔢 十帐番号(日): {m.nikkan}
 🧬 性別コード: {m.sex}
 """
         except Exception as e:
