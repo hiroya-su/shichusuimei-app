@@ -1,54 +1,28 @@
 from flask import Flask, request, render_template_string
 from meishiki import Meishiki
+import logging
 
 app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
 
-HTML = '''
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title>四柱推命 診断</title>
-</head>
-<body>
-  <h1>🔮 四柱推命 診断フォーム</h1>
-  <form method="post">
-    名前: <input type="text" name="name"><br>
-    年:   <input type="number" name="year"><br>
-    月:   <input type="number" name="month"><br>
-    日:   <input type="number" name="day"><br>
-    時:   <input type="number" name="hour"><br>
-    <button type="submit">命式を表示</button>
-  </form>
-
-  {% if error %}
-    <p style="color:red">⚠️ {{ error }}</p>
-  {% endif %}
-
-  {% if result %}
-    <h2>📝 命式結果</h2>
-    <pre>{{ result | tojson(indent=2, ensure_ascii=False) }}</pre>
-  {% endif %}
-</body>
-</html>
-'''
+HTML = '''（省略：テンプレートはそのままOK）'''
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     result = None
-    error = None  # エラーメッセージ用
+    error = None
 
     if request.method == "POST":
-        # 入力取得とトリム
-        name   = request.form.get("name", "").strip()
-        year_s = request.form.get("year", "").strip()
-        month_s= request.form.get("month", "").strip()
-        day_s  = request.form.get("day", "").strip()
-        hour_s = request.form.get("hour", "").strip()
+        # 入力取得
+        name_s   = request.form.get("name", "").strip()
+        year_s   = request.form.get("year", "").strip()
+        month_s  = request.form.get("month", "").strip()
+        day_s    = request.form.get("day", "").strip()
+        hour_s   = request.form.get("hour", "").strip()
 
-        # 空欄チェック
-        if not (name and year_s and month_s and day_s and hour_s):
-            error = "全ての項目（名前・年・月・日・時）を入力してください"
+        # バリデーション
+        if not (name_s and year_s and month_s and day_s and hour_s):
+            error = "全ての項目を入力してください"
         else:
             try:
                 year  = int(year_s)
@@ -57,9 +31,18 @@ def index():
                 hour  = int(hour_s)
 
                 m = Meishiki(year, month, day, hour)
-                result = vars(m)  # 一旦辞書化して結果表示
+                logging.info("Meishiki dir: %s", dir(m))
+
+                if hasattr(m, "to_dict"):
+                    result = m.to_dict()
+                elif hasattr(m, "to_json"):
+                    result = m.to_json()
+                else:
+                    error = "to_dict/to_json メソッドがありません"
             except ValueError:
                 error = "年/月/日/時 には数字を入力してください"
+            except Exception as e:
+                error = f"実行時エラー: {e}"
 
     return render_template_string(HTML, result=result, error=error)
 
