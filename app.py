@@ -24,6 +24,13 @@ HTML = '''
 </body></html>
 '''
 
+def kanshi_str(lst):
+    if isinstance(lst, list) and len(lst) >= 2:
+        kan = KAN[lst[0]] if 0 <= lst[0] < len(KAN) else "不明"
+        shi = SHI[lst[1]] if 0 <= lst[1] < len(SHI) else "不明"
+        return f"{kan}{shi}"
+    return "不明"
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     result = None
@@ -39,31 +46,24 @@ def index():
 
             m_obj = Meishiki(y, m, d, h)
 
-            # ログにすべての中身を出力
-            app.logger.info("Meishiki全体: %s", m_obj.__dict__)
-
-            def get_kanshi(lst):
-                if isinstance(lst, list) and len(lst) >= 2:
-                    kan = KAN[lst[0]] if 0 <= lst[0] < len(KAN) else "不明"
-                    shi = SHI[lst[1]] if 0 <= lst[1] < len(SHI) else "不明"
-                    return f"{kan}{shi}"
-                return "不明"
-
-            nenchu = get_kanshi(getattr(m_obj, "nenchu", []))
-            getchu = get_kanshi(getattr(m_obj, "getchu", []))
-            nitchu = get_kanshi(getattr(m_obj, "nitchu", []))
-            jikkan = get_kanshi(getattr(m_obj, "jichu", []))
+            nenchu = kanshi_str(getattr(m_obj, "nenchu", []))
+            getchu = kanshi_str(getattr(m_obj, "getchu", []))
+            nitchu = kanshi_str(getattr(m_obj, "nitchu", []))
+            jichu  = kanshi_str(getattr(m_obj, "jichu", []))
+            nikkan = getattr(m_obj, "nikkan", "不明")
+            sex    = getattr(m_obj, "sex", "不明")
 
             result = f"""🌸 名前: {name}
 📅 年柱: {nenchu}
 📅 月柱: {getchu}
 📅 日柱: {nitchu}
-📅 時柱: {jikkan}
-🔢 十干番号(日): {m_obj.nikkan}
-🧬 性別コード: {m_obj.sex}
+📅 時柱: {jichu}
+🔢 十干番号(日): {nikkan}
+🧬 性別コード: {sex}
 """
+
         except Exception as e:
-            app.logger.error("内部エラー: %s", e)
+            logging.exception("内部エラー:")
             error = f"内部エラー: {e}"
 
     return render_template_string(HTML, result=result, error=error)
