@@ -42,6 +42,7 @@ def index():
             try:
                 y, m, d, h = map(int, (year, month, day, hour))
                 m_obj = Meishiki(y, m, d, h)
+                app.logger.info("chishi の値: %s", m_obj.chishi)
                 app.logger.info("Meishiki生成 OK: %s", dir(m_obj))
 
                 # 干支の配列
