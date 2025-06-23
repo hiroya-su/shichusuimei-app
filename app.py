@@ -5,6 +5,7 @@ import logging
 KAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]
 SHI = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
 
+# ログ設定
 logging.basicConfig(level=logging.INFO)
 
 HTML = '''
@@ -19,7 +20,12 @@ HTML = '''
     <button type="submit">診断実行</button>
   </form>
   {% if error %}<p style="color:red">⚠️ {{ error }}</p>{% endif %}
-  {% if result %}<h2>📝 結果</h2><pre>{{ result }}</pre>{% endif %}
+  {% if result %}
+    <h2>📝 結果</h2>
+    <div style="background:#f9f9f9;border:1px solid #ccc;padding:10px">
+      {{ result | safe }}
+    </div>
+  {% endif %}
 </body></html>
 '''
 
@@ -30,48 +36,33 @@ def index():
     result = None
     error = None
     if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        year = request.form.get("year", "").strip()
-        month = request.form.get("month", "").strip()
-        day = request.form.get("day", "").strip()
-        hour = request.form.get("hour", "").strip()
+        try:
+            name = request.form.get("name", "").strip()
+            year = int(request.form.get("year", "0"))
+            month = int(request.form.get("month", "0"))
+            day = int(request.form.get("day", "0"))
+            hour = int(request.form.get("hour", "0"))
 
-        if not all([name, year, month, day, hour]):
-            error = "全ての項目を入力してください"
-        else:
-            try:
-                y, m, d, h = map(int, (year, month, day, hour))
-                m_obj = Meishiki(y, m, d, h)
-                app.logger.info("chishi の値: %s", m_obj.chishi)
+            if not all([name, year, month, day, hour]):
+                error = "全ての項目を入力してください"
+            else:
+                m_obj = Meishiki(year, month, day, hour)
                 app.logger.info("Meishiki生成 OK: %s", dir(m_obj))
 
-                # 干支の配列
-                KAN = "甲乙丙丁戊己庚辛壬癸"
-                SHI = "子丑寅卯辰巳午未申酉戌亥"
-
-                # 干支の文字列を取得（インデックス範囲をチェック）
-                try:
-                    nikkan = KAN[m_obj.nikkan] if 0 <= m_obj.nikkan < len(KAN) else "不明"
-                except Exception:
-                    nikkan = "不明"
-
-                try:
-                    chishi = SHI[m_obj.chishi] if 0 <= m_obj.chishi < len(SHI) else "不明"
-                except Exception:
-                    chishi = "不明"
+                nikkan = KAN[m_obj.nikkan % 10]
+                chishi = SHI[m_obj.chishi % 12]
 
                 result = f"""
-                🌸 名前: {name}
-                🌞 日干支: {nikkan}{chishi}
-                🔢 十干番号: {m_obj.nikkan}
-                🧬 性別コード: {m_obj.sex}
+                🌸 <strong>名前:</strong> {name}<br>
+                🌞 <strong>日干支:</strong> {nikkan}{chishi}<br>
+                🔢 <strong>十干番号:</strong> {m_obj.nikkan}<br>
+                🧬 <strong>性別コード:</strong> {m_obj.sex}
                 """
-
-            except Exception as e:
-                error = f"内部エラー: {e}"
+        except Exception as e:
+            app.logger.error("内部エラー: %s", e)
+            error = f"内部エラー: {e}"
 
     return render_template_string(HTML, result=result, error=error)
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
