@@ -2,14 +2,11 @@ from flask import Flask, request, render_template_string
 from meishiki import Meishiki
 import logging
 
-# 干支の一覧
 KAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]
 SHI = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
 
-# ログ設定
 logging.basicConfig(level=logging.INFO)
 
-# HTMLテンプレート
 HTML = '''
 <!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>四柱推命</title></head><body>
   <h1>🔮 四柱推命テスト</h1>
@@ -47,9 +44,10 @@ def index():
                 m_obj = Meishiki(y, m, d, h)
                 app.logger.info("Meishiki生成 OK: %s", dir(m_obj))
 
-                # 自分で整形する
-                kan = KAN[m_obj.nikkan] if isinstance(m_obj.nikkan, int) else "不明"
-                shi = SHI[m_obj.chishi] if isinstance(m_obj.chishi, int) else "不明"
+                # 安全な干支取得
+                kan = KAN[m_obj.nikkan] if isinstance(m_obj.nikkan, int) and 0 <= m_obj.nikkan < len(KAN) else "不明"
+                shi = SHI[m_obj.chishi] if isinstance(m_obj.chishi, int) and 0 <= m_obj.chishi < len(SHI) else "不明"
+
                 result = f"""🔯 {name} さんの診断結果
 
 日干支: {kan}{shi}
