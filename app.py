@@ -20,7 +20,7 @@ HTML = '''
     <button type="submit">診断実行</button>
   </form>
   {% if error %}<p style="color:red">⚠️ {{ error }}</p>{% endif %}
-  {% if result %}<h2>📝 結果</h2><pre>{{ result|tojson(indent=2, ensure_ascii=False) }}</pre>{% endif %}
+  {% if result %}<h2>📝 結果</h2><pre>{{ result|tojson }}</pre>{% endif %}
 </body></html>
 '''
 
