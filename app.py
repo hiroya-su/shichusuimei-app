@@ -32,17 +32,31 @@ HTML = '''
 @app.route("/", methods=["GET", "POST"])
 def index():
     result = None
-    if request.method == "POST":
-        name = request.form["name"]
-        year = int(request.form["year"])
-        month = int(request.form["month"])
-        day = int(request.form["day"])
-        hour = int(request.form["hour"])
-        m = Meishiki(year, month, day, hour)
-        print(dir(m))  # ← この行も、完全にスペース4つ（あるいは8つ）で揃える
-        result = m.show_as_dict()
+    error = None  # エラーメッセージ保持用
 
-    return render_template_string(HTML, result=result)
+    if request.method == "POST":
+        # 入力値を文字列として取得
+        year_str = request.form.get("year", "").strip()
+        month_str = request.form.get("month", "").strip()
+        day_str = request.form.get("day", "").strip()
+        hour_str = request.form.get("hour", "").strip()
+
+        # 必須チェックとエラー設定
+        if not (year_str and month_str and day_str and hour_str):
+            error = "年・月・日・時 をすべて入力してください"
+        else:
+            try:
+                year = int(year_str); month = int(month_str)
+                day = int(day_str); hour = int(hour_str)
+
+                m = Meishiki(year, month, day, hour)
+                print(dir(m))  # ← ここでメソッド一覧を出力！
+                result = {}  # 仮で
+                # result = m.show_as_dict()
+            except ValueError:
+                error = "入力値が不正です: 数字で入力してください"
+
+    return render_template_string(HTML, result=result, error=error)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
