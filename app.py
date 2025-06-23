@@ -39,6 +39,7 @@ def index():
         day = int(request.form["day"])
         hour = int(request.form["hour"])
         m = Meishiki(year, month, day, hour)
+      　print(dir(m))
         result = m.show_as_dict()
     return render_template_string(HTML, result=result)
 
