@@ -1,2 +1,2 @@
 flask
-meishiki @ git+https://github.com/hajime-f/meishiki.git
+meishiki @ git+https://github.com/hiroya-su/meishiki.git
