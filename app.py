@@ -20,7 +20,7 @@ HTML = '''
     <button type="submit">診断実行</button>
   </form>
   {% if error %}<p style="color:red">⚠️ {{ error }}</p>{% endif %}
-  {% if result %}<h2>📝 結果</h2><pre>{{ result|tojson }}</pre>{% endif %}
+  {% if result %}<h2>📝 結果</h2><pre>{{ result }}</pre>{% endif %}
 </body></html>
 '''
 
@@ -44,7 +44,7 @@ def index():
                 y, m, d, h = map(int, (year, month, day, hour))
                 m_obj = Meishiki(y, m, d, h)
                 app.logger.info("Meishiki生成 OK: %s", dir(m_obj))
-                result = dataclasses.asdict(m_obj)  # ← 修正済み
+                result = m_obj.show()  # ←ここを show() に変更
             except Exception as e:
                 error = f"内部エラー: {e}"
 
