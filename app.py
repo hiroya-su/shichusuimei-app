@@ -21,7 +21,11 @@ HTML = '''
     <button type="submit">命式を表示</button>
   </form>
 
-  {% if result %}
+
+   {% if error %}
+    <p style="color:red">⚠️ {{ error }}</p>
+   {% endif %}
+   {% if result %}
     <h2>📝 命式結果</h2>
     <pre>{{ result | tojson(indent=2, ensure_ascii=False) }}</pre>
   {% endif %}
@@ -31,32 +35,33 @@ HTML = '''
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    result = None
-    error = None  # エラーメッセージ保持用
+    error_msg = None  # ← ここが“冒頭”です
 
     if request.method == "POST":
-        # 入力値を文字列として取得
-        year_str = request.form.get("year", "").strip()
-        month_str = request.form.get("month", "").strip()
-        day_str = request.form.get("day", "").strip()
-        hour_str = request.form.get("hour", "").strip()
+        # 入力の取得
+        name = request.form.get("name", "").strip()
+        year = request.form.get("year", "").strip()
+       ...
 
-        # 必須チェックとエラー設定
-        if not (year_str and month_str and day_str and hour_str):
-            error = "年・月・日・時 をすべて入力してください"
+        # バリデーション
+        if not name or not year or not month or not day or not hour:
+            error_msg = "全ての項目を入力してください"
         else:
             try:
-                year = int(year_str); month = int(month_str)
-                day = int(day_str); hour = int(hour_str)
-
-                m = Meishiki(year, month, day, hour)
-                print(dir(m))  # ← ここでメソッド一覧を出力！
-                result = {}  # 仮で
-                # result = m.show_as_dict()
+                year = int(year); month = int(month); day = int(day); hour = int(hour)
             except ValueError:
-                error = "入力値が不正です: 数字で入力してください"
+                error_msg = "年/月/日/時 には数字を入力してください"
+        
+        if error_msg is None:
+            m = Meishiki(year, month, day, hour)
+            result = m.show_as_dict()
+        else:
+            result = None
 
-    return render_template_string(HTML, result=result, error=error)
+    else:
+        result = None
+
+    return render_template_string(HTML, result=result, error=error_msg)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
