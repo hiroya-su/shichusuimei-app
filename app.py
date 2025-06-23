@@ -39,6 +39,12 @@ HTML = '''
 
 app = Flask(__name__)
 
+def eto(tenkan, chishi):
+    try:
+        return f"{KAN[int(tenkan) % 10]}{SHI[int(chishi) % 12]}"
+    except Exception:
+        return "不明"
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     result = None
@@ -56,24 +62,26 @@ def index():
             else:
                 m = Meishiki(year, month, day, hour)
 
-                # 干支取得（indexが範囲外にならないよう % 使用）
-                def eto(tenkan, chishi):
-                    return f"{KAN[tenkan % 10]}{SHI[chishi % 12]}"
+                # 年柱・月柱・日柱・時柱
+                nenchu = eto(*m.nenchu) if isinstance(m.nenchu, (list, tuple)) and len(m.nenchu) == 2 else "不明"
+                getchu = eto(*m.getchu) if isinstance(m.getchu, (list, tuple)) and len(m.getchu) == 2 else "不明"
+                nitchu = eto(m.nikkan, m.chishi)
+                jichu = eto(*m.jichu) if isinstance(m.jichu, (list, tuple)) and len(m.jichu) == 2 else "不明"
 
                 result = f"""
                 🌸 <strong>名前:</strong> {name}<br>
                 <hr>
-                📅 <strong>年柱:</strong> {eto(m.nenchu[0], m.nenchu[1])}<br>
-                📅 <strong>月柱:</strong> {eto(m.getchu[0], m.getchu[1])}<br>
-                📅 <strong>日柱:</strong> {eto(m.nikkan, m.chishi)}<br>
-                📅 <strong>時柱:</strong> {eto(m.jichu[0], m.jichu[1]) if m.jichu else "不明"}<br>
+                📅 <strong>年柱:</strong> {nenchu}<br>
+                📅 <strong>月柱:</strong> {getchu}<br>
+                📅 <strong>日柱:</strong> {nitchu}<br>
+                📅 <strong>時柱:</strong> {jichu}<br>
                 <hr>
                 🔢 <strong>十干番号(日):</strong> {m.nikkan}<br>
                 🧬 <strong>性別コード:</strong> {m.sex}
                 """
 
         except Exception as e:
-            app.logger.error("内部エラー: %s", e)
+            logging.error("内部エラー: %s", e)
             error = f"内部エラー: {e}"
 
     return render_template_string(HTML, result=result, error=error)
